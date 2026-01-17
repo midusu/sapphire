@@ -230,6 +230,9 @@ Route::prefix('admin')->middleware(['auth', 'verified', 'admin'])->name('admin.'
             Route::put('/{activitySafety}', [\App\Http\Controllers\Admin\ActivitySafetyLogController::class, 'update'])->name('update');
         });
     });
+
+    // Feedback Management
+    Route::resource('feedback', \App\Http\Controllers\Admin\FeedbackController::class)->only(['index', 'show', 'update', 'destroy']);
 });
 
 // Default dashboard route
@@ -251,6 +254,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/my-orders', [GuestDashboardController::class, 'myOrders'])->name('my-orders');
         Route::get('/notifications', [GuestDashboardController::class, 'notifications'])->name('notifications');
         Route::post('/notifications/{id}/read', [GuestDashboardController::class, 'markNotificationRead'])->name('mark-notification-read');
+
+        // Guest Feedback
+        Route::get('/feedback/create', [GuestDashboardController::class, 'createFeedback'])->name('feedback.create');
+        Route::post('/feedback', [GuestDashboardController::class, 'storeFeedback'])->name('feedback.store');
     });
 });
 

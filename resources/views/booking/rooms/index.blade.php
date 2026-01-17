@@ -25,19 +25,16 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 @foreach($roomTypes as $roomType)
                     <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition">
-                        <div class="h-48 bg-gray-200 relative">
-                            @if($roomType->image_url)
-                                <img src="{{ asset('storage/' . $roomType->image_url) }}" alt="{{ $roomType->name }}"
-                                    class="w-full h-full object-cover">
-                            @else
-                                <div
-                                    class="w-full h-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center">
-                                    <i class="fas fa-bed text-white text-6xl"></i>
-                                </div>
-                            @endif
+                        <div class="relative h-48">
+                            <img src="{{ asset('images/rooms/' . strtolower(str_replace(' ', '-', $roomType->name)) . '.jpg') }}" 
+                                alt="{{ $roomType->name }}" 
+                                class="w-full h-full object-cover"
+                                onerror="this.src='{{ asset('images/rooms/standard-room.jpg') }}'">
+                            <div class="absolute bottom-0 left-0 bg-gradient-to-t from-black/60 to-transparent p-4 w-full">
+                                <h3 class="text-white text-2xl font-bold">{{ $roomType->name }}</h3>
+                            </div>
                         </div>
                         <div class="p-6">
-                            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ $roomType->name }}</h3>
                             <p class="text-gray-600 mb-4">{{ $roomType->description }}</p>
 
                             <div class="mb-4">

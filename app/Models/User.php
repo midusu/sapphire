@@ -131,4 +131,30 @@ class User extends Authenticatable
             $query->where('user_id', $this->id);
         })->orderBy('created_at', 'desc')->get();
     }
+
+    public function getLoyaltyStatus()
+    {
+        $totalBookings = $this->bookings->count();
+        // Sum completed payments
+        $totalSpent = Payment::whereHas('booking', function ($query) {
+            $query->where('user_id', $this->id);
+        })->orWhereHas('activityBooking', function ($query) {
+            $query->where('user_id', $this->id);
+        })->where('status', 'completed')->sum('amount');
+
+        if ($totalBookings >= 20 || $totalSpent >= 10000) {
+            return 'platinum';
+        } elseif ($totalBookings >= 10 || $totalSpent >= 5000) {
+            return 'gold';
+        } elseif ($totalBookings >= 5 || $totalSpent >= 2000) {
+            return 'silver';
+        } else {
+            return 'bronze';
+        }
+    }
+
+    public function feedback()
+    {
+        return $this->hasMany(Feedback::class);
+    }
 }

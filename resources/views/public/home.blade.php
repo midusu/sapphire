@@ -99,9 +99,9 @@
             @endphp
             @if($availableCount > 0)
             <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition">
-                <div class="h-48 bg-gray-200 flex items-center justify-center">
-                    <i class="fas fa-bed text-gray-400 text-4xl"></i>
-                </div>
+                <img src="{{ asset('images/rooms/' . strtolower(str_replace(' ', '-', $roomType->name)) . '.jpg') }}" 
+                    alt="{{ $roomType->name }}" class="h-48 w-full object-cover" 
+                    onerror="this.src='{{ asset('images/rooms/standard-room.jpg') }}'">
                 <div class="p-6">
                     <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ $roomType->name }}</h3>
                     <p class="text-gray-600 mb-4">{{ Str::limit($roomType->description ?? 'Luxurious accommodation', 80) }}</p>

@@ -13,7 +13,7 @@ class GuestDashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // Get current booking
         $currentBooking = $user->bookings()
             ->whereIn('status', ['confirmed', 'checked_in'])
@@ -21,8 +21,8 @@ class GuestDashboardController extends Controller
             ->first();
 
         // Calculate total spent (Current Booking Payments)
-        $totalSpent = $currentBooking 
-            ? $currentBooking->payments()->where('status', 'completed')->sum('amount') 
+        $totalSpent = $currentBooking
+            ? $currentBooking->payments()->where('status', 'completed')->sum('amount')
             : 0;
 
         // Get upcoming activities
@@ -48,10 +48,10 @@ class GuestDashboardController extends Controller
             ->get();
 
         return view('guest.dashboard', compact(
-            'currentBooking', 
-            'recentOrders', 
-            'unreadNotifications', 
-            'totalSpent', 
+            'currentBooking',
+            'recentOrders',
+            'unreadNotifications',
+            'totalSpent',
             'upcomingActivities'
         ));
     }
@@ -59,7 +59,7 @@ class GuestDashboardController extends Controller
     public function foodMenu(Request $request)
     {
         $menuType = $request->get('menu_type', 'room_service');
-        
+
         $foods = Food::where('available', true)
             ->forMenuType($menuType)
             ->orderBy('category')
@@ -106,7 +106,7 @@ class GuestDashboardController extends Controller
             $currentBooking = $user->bookings()
                 ->whereIn('status', ['confirmed', 'checked_in'])
                 ->first();
-            
+
             if (!$currentBooking) {
                 return back()->with('error', 'You must have an active booking to order room service.');
             }
@@ -143,7 +143,7 @@ class GuestDashboardController extends Controller
         $order->createNotification(
             'order_placed',
             'Order Placed Successfully',
-            "Your {$order->getMenuTypeLabel()} order for {$food->name} has been placed. " . 
+            "Your {$order->getMenuTypeLabel()} order for {$food->name} has been placed. " .
             ($isScheduled ? "Scheduled for {$order->scheduled_time->format('M j, Y H:i')}" : "Being prepared now")
         );
 
@@ -154,7 +154,7 @@ class GuestDashboardController extends Controller
     public function myOrders()
     {
         $user = Auth::user();
-        
+
         $orders = $user->foodOrders()
             ->with(['food', 'booking.room'])
             ->orderBy('order_time', 'desc')
@@ -166,7 +166,7 @@ class GuestDashboardController extends Controller
     public function notifications()
     {
         $user = Auth::user();
-        
+
         $notifications = $user->notifications()
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -181,7 +181,34 @@ class GuestDashboardController extends Controller
     {
         $notification = Auth::user()->notifications()->findOrFail($id);
         $notification->markAsRead();
-        
+
         return response()->json(['success' => true]);
+    }
+
+    public function createFeedback()
+    {
+        $user = Auth::user();
+        $bookings = $user->bookings()->orderBy('check_in_date', 'desc')->get();
+        return view('guest.feedback.create', compact('bookings'));
+    }
+
+    public function storeFeedback(Request $request)
+    {
+        $validated = $request->validate([
+            'type' => 'required|in:feedback,complaint',
+            'category' => 'required|in:general,room,food,service,activity',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string|max:2000',
+            'rating' => 'nullable|integer|min:1|max:5',
+            'booking_id' => 'nullable|exists:bookings,id',
+        ]);
+
+        $validated['user_id'] = Auth::id();
+        $validated['status'] = 'pending';
+
+        \App\Models\Feedback::create($validated);
+
+        return redirect()->route('guest.dashboard')
+            ->with('success', 'Thank you for your feedback! We have received it and will review it shortly.');
     }
 }

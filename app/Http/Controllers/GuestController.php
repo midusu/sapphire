@@ -55,10 +55,13 @@ class GuestController extends Controller
         $guestData['password'] = bcrypt('password'); // Default password, guest can change later
         $guestData['email_verified_at'] = now();
 
-        User::create($guestData);
+        $guest = User::create($guestData);
+
+        // Send welcome notification/email
+        $guest->notify(new \App\Notifications\WelcomeNotification($guest));
 
         return redirect()->route('admin.guests.index')
-            ->with('success', 'Guest created successfully!');
+            ->with('success', 'Guest created successfully and welcome email sent!');
     }
 
     public function show(User $guest)
@@ -239,13 +242,13 @@ class GuestController extends Controller
 
         if ($request->filled('min_bookings')) {
             $guests = $guests->filter(function ($guest) use ($request) {
-                return $guest->total_bookings >= (int)$request->min_bookings;
+                return $guest->total_bookings >= (int) $request->min_bookings;
             });
         }
 
         if ($request->filled('min_spent')) {
             $guests = $guests->filter(function ($guest) use ($request) {
-                return $guest->total_spent >= (float)$request->min_spent;
+                return $guest->total_spent >= (float) $request->min_spent;
             });
         }
 

@@ -5,13 +5,20 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto">
-    <!-- Room Header -->
+    <!-- Room Header with Image -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <div class="flex justify-between items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
                 <h2 class="text-2xl font-bold text-gray-800">Room {{ $room->room_number }}</h2>
                 <p class="text-gray-600">{{ $room->roomType->name }} - Floor {{ $room->floor }}</p>
             </div>
+            <div class="flex justify-end">
+                <img src="{{ asset('images/rooms/' . strtolower(str_replace(' ', '-', $room->roomType->name)) . '.jpg') }}" 
+                     alt="{{ $room->roomType->name }}" 
+                     class="w-full h-48 object-cover rounded-lg shadow-md"
+                     onerror="this.src='{{ asset('images/rooms/standard-room.jpg') }}'">
+            </div>
+        </div>
             <div class="flex space-x-2">
                 @if($room->status != 'occupied')
                     <a href="{{ route('admin.rooms.edit', $room) }}" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition">

@@ -106,15 +106,21 @@
                     </div>
                 </div>
 
-                <!-- Loyalty / Nights (Placeholder) -->
+                <!-- Loyalty Status -->
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-500">Nights Stayed</p>
-                        <p class="text-2xl font-bold text-gray-800">{{ $currentBooking ? $currentBooking->duration : 0 }}
+                        <p class="text-sm font-medium text-gray-500">Membership Tier</p>
+                        @php $tier = Auth::user()->getLoyaltyStatus(); @endphp
+                        <p class="text-2xl font-bold 
+                            @if($tier == 'bronze') text-orange-600
+                            @elseif($tier == 'silver') text-gray-600
+                            @elseif($tier == 'gold') text-yellow-600
+                            @else text-purple-600 @endif capitalize">
+                            {{ $tier }}
                         </p>
                     </div>
-                    <div class="bg-purple-50 p-3 rounded-full">
-                        <i class="fas fa-moon text-purple-600"></i>
+                    <div class="bg-blue-50 p-3 rounded-full">
+                        <i class="fas fa-crown text-blue-600"></i>
                     </div>
                 </div>
             </div>
@@ -181,9 +187,9 @@
                                             <div class="font-semibold text-gray-900">${{ number_format($order->total_price, 2) }}
                                             </div>
                                             <span class="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium capitalize 
-                                                                                @if($order->status == 'delivered') bg-gray-100 text-gray-600 
-                                                                                @elseif($order->status == 'cancelled') bg-red-50 text-red-600
-                                                                                @else bg-blue-50 text-blue-600 @endif">
+                                                                                            @if($order->status == 'delivered') bg-gray-100 text-gray-600 
+                                                                                            @elseif($order->status == 'cancelled') bg-red-50 text-red-600
+                                                                                            @else bg-blue-50 text-blue-600 @endif">
                                                 {{ $order->status }}
                                             </span>
                                         </div>
@@ -224,10 +230,11 @@
                                     class="fas fa-list-alt text-xl mb-2 text-gray-400 group-hover:text-blue-600 transition"></i>
                                 <div class="text-sm font-medium">My Orders</div>
                             </a>
-                            <a href="#"
+                            <a href="{{ route('guest.feedback.create') }}"
                                 class="p-4 bg-gray-50 rounded-xl hover:bg-blue-50 hover:text-blue-700 transition text-center group">
-                                <i class="fas fa-broom text-xl mb-2 text-gray-400 group-hover:text-blue-600 transition"></i>
-                                <div class="text-sm font-medium">Housekeeping</div>
+                                <i
+                                    class="fas fa-comment-dots text-xl mb-2 text-gray-400 group-hover:text-blue-600 transition"></i>
+                                <div class="text-sm font-medium">Feedback</div>
                             </a>
                         </div>
                     </div>

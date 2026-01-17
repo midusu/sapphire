@@ -69,6 +69,10 @@
                     class="block px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.amenities.*') ? 'bg-slate-700' : '' }}">
                     <i class="fas fa-star mr-2"></i> Amenities
                 </a>
+                <a href="{{ route('admin.feedback.index') }}"
+                    class="block px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.feedback.*') ? 'bg-slate-700' : '' }}">
+                    <i class="fas fa-comments mr-2"></i> Feedback
+                </a>
 
                 <div class="px-4 py-2 mt-4 mb-2 text-xs text-gray-400 uppercase font-semibold">
                     Security
@@ -76,20 +80,21 @@
 
                 <!-- Security Menu with Submenu -->
                 <div x-data="{ open: {{ request()->routeIs('admin.security.*') ? 'true' : 'false' }}" class="relative">
-                    <button @click="open = !open" 
+                    <button @click="open = !open"
                         class="w-full flex items-center justify-between px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.security.*') ? 'bg-slate-700' : '' }}">
                         <div class="flex items-center">
                             <i class="fas fa-shield-alt mr-2"></i> Security
                         </div>
-                        <i class="fas fa-chevron-down text-xs transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-200"
+                            :class="{ 'rotate-180': open }"></i>
                     </button>
-                    <div x-show="open" x-transition:enter="transition ease-out duration-200" 
-                         x-transition:enter-start="opacity-0 transform -translate-y-1"
-                         x-transition:enter-end="opacity-100 transform translate-y-0"
-                         x-transition:leave="transition ease-in duration-150"
-                         x-transition:leave-start="opacity-100 transform translate-y-0"
-                         x-transition:leave-end="opacity-0 transform -translate-y-1"
-                         class="ml-4 mt-1 space-y-1 bg-slate-800 relative z-10">
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 transform -translate-y-1"
+                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 transform translate-y-0"
+                        x-transition:leave-end="opacity-0 transform -translate-y-1"
+                        class="ml-4 mt-1 space-y-1 bg-slate-800 relative z-10">
                         <a href="{{ route('admin.security.audit-logs.index') }}"
                             class="block px-4 py-2 hover:bg-slate-600 text-white {{ request()->routeIs('admin.security.audit-logs.*') ? 'bg-slate-600' : '' }}">
                             <i class="fas fa-clipboard-list mr-2"></i> Audit Logs
@@ -110,21 +115,23 @@
                 </div>
 
                 <!-- Inventory Menu with Submenu -->
-                <div x-data="{ open: {{ request()->routeIs('admin.inventory.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.food.items.*') ? 'true' : 'false' }}" class="relative">
-                    <button @click="open = !open" 
+                <div x-data="{ open: {{ request()->routeIs('admin.inventory.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.food.items.*') ? 'true' : 'false' }}"
+                    class="relative">
+                    <button @click="open = !open"
                         class="w-full flex items-center justify-between px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.inventory.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.food.items.*') ? 'bg-slate-700' : '' }}">
                         <div class="flex items-center">
                             <i class="fas fa-boxes mr-2"></i> Inventory
                         </div>
-                        <i class="fas fa-chevron-down text-xs transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-200"
+                            :class="{ 'rotate-180': open }"></i>
                     </button>
-                    <div x-show="open" x-transition:enter="transition ease-out duration-200" 
-                         x-transition:enter-start="opacity-0 transform -translate-y-1"
-                         x-transition:enter-end="opacity-100 transform translate-y-0"
-                         x-transition:leave="transition ease-in duration-150"
-                         x-transition:leave-start="opacity-100 transform translate-y-0"
-                         x-transition:leave-end="opacity-0 transform -translate-y-1"
-                         class="ml-4 mt-1 space-y-1 bg-slate-800 relative z-10">
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 transform -translate-y-1"
+                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 transform translate-y-0"
+                        x-transition:leave-end="opacity-0 transform -translate-y-1"
+                        class="ml-4 mt-1 space-y-1 bg-slate-800 relative z-10">
                         <a href="{{ route('admin.inventory.index') }}"
                             class="block px-4 py-2 hover:bg-slate-600 text-white {{ request()->routeIs('admin.inventory.index') || request()->routeIs('admin.inventory.create') || request()->routeIs('admin.inventory.edit') || request()->routeIs('admin.inventory.history') ? 'bg-slate-600' : '' }}">
                             <i class="fas fa-list mr-2"></i> Stock Items
