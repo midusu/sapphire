@@ -20,7 +20,7 @@
                 <h1 class="text-2xl font-bold text-blue-400">Sapphire</h1>
                 <p class="text-sm text-gray-400">Hotel Management</p>
             </div>
-            <nav class="mt-8">
+            <nav class="mt-8" style="background: #1e293b;">
                 <a href="{{ route('admin.dashboard') }}"
                     class="block px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.dashboard') ? 'bg-slate-700' : '' }}">
                     <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
@@ -75,7 +75,7 @@
                 </div>
 
                 <!-- Security Menu with Submenu -->
-                <div x-data="{ open: {{ request()->routeIs('admin.security.*') ? 'true' : 'false' } }" class="relative">
+                <div x-data="{ open: {{ request()->routeIs('admin.security.*') ? 'true' : 'false' }}" class="relative">
                     <button @click="open = !open" 
                         class="w-full flex items-center justify-between px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.security.*') ? 'bg-slate-700' : '' }}">
                         <div class="flex items-center">
@@ -110,7 +110,7 @@
                 </div>
 
                 <!-- Inventory Menu with Submenu -->
-                <div x-data="{ open: {{ request()->routeIs('admin.inventory.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.food.items.*') ? 'true' : 'false' }} }" class="relative">
+                <div x-data="{ open: {{ request()->routeIs('admin.inventory.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.food.items.*') ? 'true' : 'false' }}" class="relative">
                     <button @click="open = !open" 
                         class="w-full flex items-center justify-between px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.inventory.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.food.items.*') ? 'bg-slate-700' : '' }}">
                         <div class="flex items-center">
