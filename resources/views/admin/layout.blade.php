@@ -75,7 +75,7 @@
                 </div>
 
                 <!-- Security Menu with Submenu -->
-                <div x-data="{ open: {{ request()->routeIs('admin.security.*') ? 'true' : 'false' }} }">
+                <div x-data="{ open: {{ request()->routeIs('admin.security.*') ? 'true' : 'false' } }" class="relative">
                     <button @click="open = !open" 
                         class="w-full flex items-center justify-between px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.security.*') ? 'bg-slate-700' : '' }}">
                         <div class="flex items-center">
@@ -83,17 +83,23 @@
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
                     </button>
-                    <div x-show="open" x-transition class="ml-4 mt-1 space-y-1">
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" 
+                         x-transition:enter-start="opacity-0 transform -translate-y-1"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 transform translate-y-0"
+                         x-transition:leave-end="opacity-0 transform -translate-y-1"
+                         class="ml-4 mt-1 space-y-1 bg-slate-800 relative z-10">
                         <a href="{{ route('admin.security.audit-logs.index') }}"
-                            class="block px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.security.audit-logs.*') ? 'bg-slate-600' : '' }}">
+                            class="block px-4 py-2 hover:bg-slate-600 text-white {{ request()->routeIs('admin.security.audit-logs.*') ? 'bg-slate-600' : '' }}">
                             <i class="fas fa-clipboard-list mr-2"></i> Audit Logs
                         </a>
                         <a href="{{ route('admin.security.backup.index') }}"
-                            class="block px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.security.backup.*') ? 'bg-slate-600' : '' }}">
+                            class="block px-4 py-2 hover:bg-slate-600 text-white {{ request()->routeIs('admin.security.backup.*') ? 'bg-slate-600' : '' }}">
                             <i class="fas fa-database mr-2"></i> Backup & Restore
                         </a>
                         <a href="{{ route('admin.security.activity-safety.index') }}"
-                            class="block px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.security.activity-safety.*') ? 'bg-slate-600' : '' }}">
+                            class="block px-4 py-2 hover:bg-slate-600 text-white {{ request()->routeIs('admin.security.activity-safety.*') ? 'bg-slate-600' : '' }}">
                             <i class="fas fa-exclamation-triangle mr-2"></i> Activity Safety Logs
                         </a>
                     </div>
@@ -104,7 +110,7 @@
                 </div>
 
                 <!-- Inventory Menu with Submenu -->
-                <div x-data="{ open: {{ request()->routeIs('admin.inventory.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.food.items.*') ? 'true' : 'false' }} }">
+                <div x-data="{ open: {{ request()->routeIs('admin.inventory.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.food.items.*') ? 'true' : 'false' }} }" class="relative">
                     <button @click="open = !open" 
                         class="w-full flex items-center justify-between px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.inventory.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.food.items.*') ? 'bg-slate-700' : '' }}">
                         <div class="flex items-center">
@@ -112,17 +118,23 @@
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
                     </button>
-                    <div x-show="open" x-transition class="ml-4 mt-1 space-y-1">
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" 
+                         x-transition:enter-start="opacity-0 transform -translate-y-1"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 transform translate-y-0"
+                         x-transition:leave-end="opacity-0 transform -translate-y-1"
+                         class="ml-4 mt-1 space-y-1 bg-slate-800 relative z-10">
                         <a href="{{ route('admin.inventory.index') }}"
-                            class="block px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.inventory.index') || request()->routeIs('admin.inventory.create') || request()->routeIs('admin.inventory.edit') || request()->routeIs('admin.inventory.history') ? 'bg-slate-600' : '' }}">
+                            class="block px-4 py-2 hover:bg-slate-600 text-white {{ request()->routeIs('admin.inventory.index') || request()->routeIs('admin.inventory.create') || request()->routeIs('admin.inventory.edit') || request()->routeIs('admin.inventory.history') ? 'bg-slate-600' : '' }}">
                             <i class="fas fa-list mr-2"></i> Stock Items
                         </a>
                         <a href="{{ route('admin.suppliers.index') }}"
-                            class="block px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.suppliers.*') ? 'bg-slate-600' : '' }}">
+                            class="block px-4 py-2 hover:bg-slate-600 text-white {{ request()->routeIs('admin.suppliers.*') ? 'bg-slate-600' : '' }}">
                             <i class="fas fa-truck mr-2"></i> Suppliers
                         </a>
                         <a href="{{ route('admin.food.items.index') }}"
-                            class="block px-4 py-2 hover:bg-slate-700 {{ request()->routeIs('admin.food.items.*') ? 'bg-slate-600' : '' }}">
+                            class="block px-4 py-2 hover:bg-slate-600 text-white {{ request()->routeIs('admin.food.items.*') ? 'bg-slate-600' : '' }}">
                             <i class="fas fa-hamburger mr-2"></i> Food Items
                         </a>
                     </div>
