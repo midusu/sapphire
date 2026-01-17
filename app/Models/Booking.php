@@ -21,7 +21,8 @@ class Booking extends Model
         'special_requests',
         'guest_name',
         'guest_email',
-        'guest_phone'
+        'guest_phone',
+        'coupon_id'
     ];
 
     protected $casts = [

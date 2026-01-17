@@ -25,6 +25,7 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/rooms', [BookingController::class, 'publicIndex'])->name('rooms.index');
     Route::get('/rooms/create', [BookingController::class, 'publicCreate'])->name('rooms.create');
     Route::post('/rooms', [BookingController::class, 'publicStore'])->name('rooms.store');
+    Route::get('/confirmation/{booking}', [BookingController::class, 'confirmation'])->name('confirmation');
     Route::post('/coupon/validate', [\App\Http\Controllers\CouponController::class, 'validateCoupon'])->name('coupon.validate');
 });
 

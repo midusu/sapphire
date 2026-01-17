@@ -256,7 +256,9 @@ class ActivityBookingController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->route('booking.activities.index')->with('success', 'Activity booking request submitted successfully! We will confirm your booking shortly.');
+            
+            return redirect()->route('booking.confirmation', $activityBooking)
+                ->with('success', 'Activity booking request submitted successfully! We will confirm your booking shortly.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Failed to create activity booking. Please try again.')->withInput();

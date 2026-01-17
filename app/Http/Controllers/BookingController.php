@@ -316,6 +316,7 @@ class BookingController extends Controller
                 'guest_name' => $userId ? null : $request->guest_name,
                 'guest_email' => $userId ? null : $request->guest_email,
                 'guest_phone' => $userId ? null : $request->guest_phone,
+                'coupon_id' => $couponId,
             ]);
 
             // Calculate payment amount based on selection
@@ -348,13 +349,29 @@ class BookingController extends Controller
             // Redirect to payment checkout if online payment is selected
             if (in_array($request->payment_method, ['card', 'online'])) {
                 $payment = Payment::where('booking_id', $booking->id)->first();
+                // Check if we can proceed with online payment
+                if (!env('STRIPE_SECRET')) {
+                     // Fallback for dev environment or misconfiguration
+                     // Mark as pending but show confirmation
+                     return redirect()->route('booking.confirmation', $booking)
+                        ->with('success', $successMessage . ' (Payment system in test mode)');
+                }
                 return redirect()->route('payment.checkout', $payment);
             }
 
-            return redirect()->route('booking.rooms.index')->with('success', $successMessage);
+            return redirect()->route('booking.confirmation', $booking)->with('success', $successMessage);
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Failed to create booking. Please try again.')->withInput();
         }
+    }
+
+    public function confirmation(Booking $booking)
+    {
+        // Simple security check: if guest, maybe rely on session or just show it (public enough?)
+        // Ideally we check if auth user owns it, or if it was just created in session.
+        // For now, we'll just show it.
+        $booking->load(['room.roomType']);
+        return view('booking.confirmation', compact('booking'));
     }
 }

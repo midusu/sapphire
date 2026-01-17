@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.public')
 
 @section('title', 'Create Activity Booking - Sapphire Hotel')
 
@@ -166,56 +166,78 @@ document.addEventListener('DOMContentLoaded', function() {
         return [
             'id' => $activity->id,
             'name' => $activity->name,
-            'price_per_person' => $activity->price,
-            'max_participants' => $activity->max_participants
+            'price_per_person' => (float) $activity->price,
+            'max_participants' => (int) $activity->max_participants
         ];
     })->toJson() !!};
 
-    // Handle activity change
-    activitySelect.addEventListener('change', function() {
-        const selectedActivityId = this.value;
-        const selectedActivity = activityData.find(a => a.id == selectedActivityId);
+    function updatePrice() {
+        const selectedActivityId = activitySelect.value;
+        const selectedActivity = activityData.find(a => String(a.id) === String(selectedActivityId));
+        const participants = parseInt(participantsInput.value) || 1;
         
         if (selectedActivity) {
             pricePerPerson.textContent = `$${selectedActivity.price_per_person.toFixed(2)}`;
             maxParticipantsSpan.textContent = selectedActivity.max_participants;
             participantsInput.max = selectedActivity.max_participants;
             
-            if (parseInt(participantsInput.value) > selectedActivity.max_participants) {
-                participantsInput.value = selectedActivity.max_participants;
+            // Adjust input value if it exceeds max (but only on change, not while typing ideally, or handle carefully)
+            if (participants > selectedActivity.max_participants) {
+                // participantsInput.value = selectedActivity.max_participants; // Optional: auto-correct
+            }
+
+            if (participants > 0) {
+                const total = selectedActivity.price_per_person * participants;
+                numberOfParticipants.textContent = participants;
+                totalAmount.textContent = `$${total.toFixed(2)}`;
+            } else {
+                numberOfParticipants.textContent = '0';
+                totalAmount.textContent = '$0.00';
             }
         } else {
             pricePerPerson.textContent = '$0.00';
             maxParticipantsSpan.textContent = '1';
             participantsInput.max = '1';
+            numberOfParticipants.textContent = '0';
+            totalAmount.textContent = '$0.00';
         }
+    }
+
+    // Handle activity change
+    activitySelect.addEventListener('change', function() {
+        const selectedActivityId = this.value;
+        const selectedActivity = activityData.find(a => String(a.id) === String(selectedActivityId));
+        
+        // Reset participants to 1 when changing activity if current value is invalid or 0
+        if (!participantsInput.value || parseInt(participantsInput.value) < 1) {
+            participantsInput.value = 1;
+        }
+        
         updatePrice();
     });
 
     // Handle participants change
     participantsInput.addEventListener('input', updatePrice);
 
-    function updatePrice() {
-        const selectedActivityId = activitySelect.value;
-        const selectedActivity = activityData.find(a => a.id == selectedActivityId);
-        const participants = parseInt(participantsInput.value) || 1;
-        
-        if (selectedActivity && participants > 0) {
-            const total = selectedActivity.price_per_person * participants;
-            pricePerPerson.textContent = `$${selectedActivity.price_per_person.toFixed(2)}`;
-            numberOfParticipants.textContent = participants;
-            totalAmount.textContent = `$${total.toFixed(2)}`;
-        } else {
-            pricePerPerson.textContent = '$0.00';
-            numberOfParticipants.textContent = '1';
-            totalAmount.textContent = '$0.00';
-        }
-    }
+    // Initial update
+    updatePrice();
 
-    // Set initial activity if provided
+    // Set initial activity if provided via URL
     @if(request('activity'))
-        activitySelect.value = '{{ request('activity') }}';
-        activitySelect.dispatchEvent(new Event('change'));
+        if (activitySelect) {
+            activitySelect.value = '{{ request('activity') }}';
+            updatePrice(); 
+        }
+    @else
+        // Auto-select the first available activity if none selected to ensure price is shown
+        if (activitySelect) {
+            // If no value is selected (default placeholder), select the first actual activity
+            if (!activitySelect.value && activitySelect.options.length > 1) {
+                activitySelect.selectedIndex = 1;
+            }
+            // Always update price on load
+            updatePrice();
+        }
     @endif
 });
 </script>

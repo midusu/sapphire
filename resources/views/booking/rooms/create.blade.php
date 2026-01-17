@@ -356,9 +356,19 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePrice();
     }
 
+    let currentTotal = 0;
+    let currentDiscount = 0;
+
     function updatePrice() {
         const selectedTypeId = roomTypeSelect.value;
         const selectedType = roomData.find(rt => String(rt.id) === String(selectedTypeId));
+
+        // Always update base price if a type is selected
+        if (selectedType) {
+            pricePerNight.textContent = '$' + selectedType.price_per_night.toFixed(2);
+        } else {
+            pricePerNight.textContent = '$0.00';
+        }
 
         if (selectedType && checkInDate.value && checkOutDate.value) {
             const start = new Date(checkInDate.value);
@@ -369,8 +379,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (nights > 0) {
                 const price = selectedType.price_per_night;
                 const total = price * nights;
-                pricePerNight.textContent = '$' + price.toFixed(2);
+                currentTotal = total;
+                
                 numberOfNights.textContent = nights;
+                
+                // Recalculate discount if coupon was applied
+                // For simplicity, we might reset coupon on date/room change or re-validate
+                // Here we'll just reset for safety to avoid incorrect calculations
+                resetCoupon();
+
                 totalAmount.textContent = '$' + total.toFixed(2);
 
                 if (depositAmountDisplay) {
@@ -383,12 +400,96 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        pricePerNight.textContent = '$0.00';
+        // If no dates selected or invalid dates, only reset totals, not the base price per night
         numberOfNights.textContent = '0';
         totalAmount.textContent = '$0.00';
+        currentTotal = 0;
+        resetCoupon();
         if (depositAmountDisplay) {
             depositAmountDisplay.textContent = '';
         }
+    }
+
+    // Coupon Logic
+    const couponInput = document.getElementById('coupon_code_input');
+    const applyCouponBtn = document.getElementById('apply_coupon_btn');
+    const couponMessage = document.getElementById('coupon_message');
+    const discountRow = document.getElementById('discount_row');
+    const discountAmountDisplay = document.getElementById('discount_amount');
+
+    function resetCoupon() {
+        currentDiscount = 0;
+        couponMessage.classList.add('hidden');
+        couponMessage.className = 'mt-2 text-sm hidden'; 
+        discountRow.classList.add('hidden');
+        // Don't clear input value so user sees what they typed
+    }
+
+    if (applyCouponBtn) {
+        applyCouponBtn.addEventListener('click', function() {
+            const code = couponInput.value.trim();
+            if (!code) return;
+            
+            if (currentTotal <= 0) {
+                showCouponMessage('Please select room and dates first.', 'text-red-600');
+                return;
+            }
+
+            // Show loading state
+            const originalText = applyCouponBtn.textContent;
+            applyCouponBtn.textContent = 'Checking...';
+            applyCouponBtn.disabled = true;
+
+            fetch('{{ route("booking.coupon.validate") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    code: code,
+                    total_amount: currentTotal
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                applyCouponBtn.textContent = originalText;
+                applyCouponBtn.disabled = false;
+
+                if (data.valid) {
+                    currentDiscount = data.discount;
+                    showCouponMessage(data.message, 'text-green-600');
+                    
+                    discountRow.classList.remove('hidden');
+                    discountAmountDisplay.textContent = '-$' + data.discount.toFixed(2);
+                    
+                    const newTotal = currentTotal - currentDiscount;
+                    totalAmount.textContent = '$' + newTotal.toFixed(2);
+                    
+                    if (depositAmountDisplay) {
+                        const depositPercent = {{ (int) config('hotel.booking.deposit_percentage', 20) }};
+                        const deposit = newTotal * (depositPercent / 100);
+                        depositAmountDisplay.textContent = '$' + deposit.toFixed(2);
+                    }
+                } else {
+                    resetCoupon();
+                    showCouponMessage(data.message, 'text-red-600');
+                    totalAmount.textContent = '$' + currentTotal.toFixed(2);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                applyCouponBtn.textContent = originalText;
+                applyCouponBtn.disabled = false;
+                showCouponMessage('Error validating coupon. Please try again.', 'text-red-600');
+            });
+        });
+    }
+
+    function showCouponMessage(message, colorClass) {
+        couponMessage.textContent = message;
+        couponMessage.className = `mt-2 text-sm ${colorClass}`;
+        couponMessage.classList.remove('hidden');
     }
 
     if (roomTypeSelect) {
@@ -397,15 +498,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (checkInDate) {
         checkInDate.addEventListener('change', updatePrice);
+        // Also trigger if value is pre-filled
+        if (checkInDate.value) updatePrice();
     }
     if (checkOutDate) {
         checkOutDate.addEventListener('change', updatePrice);
+        if (checkOutDate.value) updatePrice();
     }
 
     @if(request('room_type'))
         if (roomTypeSelect) {
             roomTypeSelect.value = '{{ request('room_type') }}';
             populateRooms();
+        }
+    @else
+        // Auto-select first room type if none selected
+        if (roomTypeSelect) {
+            if (!roomTypeSelect.value && roomTypeSelect.options.length > 1) {
+                roomTypeSelect.selectedIndex = 1;
+                populateRooms();
+            } else {
+                updatePrice();
+            }
         }
     @endif
 });
