@@ -12,11 +12,31 @@ use Illuminate\Support\Facades\DB;
 
 class ActivityBookingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $activityBookings = ActivityBooking::with(['user', 'activity'])
-            ->orderBy('scheduled_time', 'desc')
-            ->paginate(10);
+        $query = ActivityBooking::with(['user', 'activity']);
+
+        // Filter by Activity
+        if ($request->filled('activity_id')) {
+            $query->where('activity_id', $request->activity_id);
+        }
+
+        // Filter by Status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by Date Range
+        if ($request->filled('date_from')) {
+            $query->whereDate('scheduled_time', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('scheduled_time', '<=', $request->date_to);
+        }
+
+        $activityBookings = $query->orderBy('scheduled_time', 'desc')
+            ->paginate(10)
+            ->withQueryString();
             
         return view('admin.activities.bookings.index', compact('activityBookings'));
     }

@@ -11,6 +11,7 @@ class Invoice extends Model
 
     protected $fillable = [
         'booking_id',
+        'activity_booking_id',
         'user_id',
         'invoice_number',
         'issue_date',
@@ -34,6 +35,11 @@ class Invoice extends Model
     public function booking()
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function activityBooking()
+    {
+        return $this->belongsTo(ActivityBooking::class);
     }
 
     public function user()

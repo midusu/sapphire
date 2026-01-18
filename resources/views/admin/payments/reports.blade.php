@@ -161,12 +161,32 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($payments as $payment)
+                    @php
+                        $guestName = 'Guest';
+                        if ($payment->booking) {
+                            $guestName = $payment->booking->user 
+                                ? $payment->booking->user->name 
+                                : ($payment->booking->guest_name ?? 'Guest');
+                        } elseif ($payment->activityBooking) {
+                            if ($payment->activityBooking->user) {
+                                $guestName = $payment->activityBooking->user->name;
+                            } elseif (!empty($payment->activityBooking->special_requirements)) {
+                                $reqs = is_string($payment->activityBooking->special_requirements) 
+                                    ? json_decode($payment->activityBooking->special_requirements, true) 
+                                    : $payment->activityBooking->special_requirements;
+                                    
+                                if (is_array($reqs)) {
+                                    $guestName = $reqs['guest_name'] ?? 'Guest';
+                                }
+                            }
+                        }
+                    @endphp
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {{ $payment->created_at->format('M d, Y H:i') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ $payment->booking?->user->name ?? $payment->activityBooking?->user->name }}
+                            {{ $guestName }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             @if($payment->booking_id)

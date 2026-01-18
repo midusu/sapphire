@@ -107,9 +107,15 @@ class GuestDashboardController extends Controller
                 ->whereIn('status', ['confirmed', 'checked_in'])
                 ->first();
 
+            // Allow room service only if booking exists
             if (!$currentBooking) {
-                return back()->with('error', 'You must have an active booking to order room service.');
+                return back()->with('error', 'You must have an active booking to order room service. Please choose Dine-in.');
             }
+        } else {
+             // For dine-in, check if user has a booking just to associate it if possible, but not mandatory
+             $currentBooking = $user->bookings()
+                ->whereIn('status', ['confirmed', 'checked_in'])
+                ->first();
         }
 
         $isScheduled = !empty($validated['scheduled_time']);

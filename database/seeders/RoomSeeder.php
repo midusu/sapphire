@@ -36,8 +36,13 @@ class RoomSeeder extends Seeder
                     default => 1,
                 };
 
+                $roomNumber = str_pad($roomCounter++, 4, '0', STR_PAD_LEFT);
+                if (Room::where('room_number', $roomNumber)->exists()) {
+                    continue;
+                }
+
                 Room::create([
-                    'room_number' => str_pad($roomCounter++, 4, '0', STR_PAD_LEFT),
+                    'room_number' => $roomNumber,
                     'room_type_id' => $type->id,
                     'status' => 'available',
                     'floor' => $floor,

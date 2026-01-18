@@ -134,7 +134,7 @@
                     <div class="flex justify-between items-start">
                         <div>
                             <h3 class="text-lg font-bold">{{ $room->room_number }}</h3>
-                            <p class="text-sm opacity-90">{{ $room->roomType->name }}</p>
+                            <p class="text-sm opacity-90">{{ $room->roomType->name ?? 'Unknown Type' }}</p>
                         </div>
                         <span class="px-2 py-1 text-xs rounded-full bg-white bg-opacity-20">
                             {{ ucfirst($room->status) }}
@@ -151,22 +151,22 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600">Type:</span>
-                            <span class="font-medium">{{ $room->roomType->name }}</span>
+                            <span class="font-medium">{{ $room->roomType->name ?? 'N/A' }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600">Rate:</span>
-                            <span class="font-medium">${{ number_format($room->roomType->base_price, 2) }}</span>
+                            <span class="font-medium">${{ number_format($room->roomType->base_price ?? 0, 2) }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600">Capacity:</span>
-                            <span class="font-medium">{{ $room->roomType->max_occupancy }} guests</span>
+                            <span class="font-medium">{{ $room->roomType->max_occupancy ?? 0 }} guests</span>
                         </div>
                     </div>
                     
                     @if($room->currentBooking)
                         <div class="mt-3 p-2 bg-blue-50 rounded text-xs">
                             <div class="font-medium text-blue-800">Occupied by:</div>
-                            <div class="text-blue-600">{{ $room->currentBooking->user->name }}</div>
+                            <div class="text-blue-600">{{ $room->currentBooking->user->name ?? 'Unknown Guest' }}</div>
                             <div class="text-blue-600">Until: {{ $room->currentBooking->check_out_date->format('M d') }}</div>
                         </div>
                     @endif

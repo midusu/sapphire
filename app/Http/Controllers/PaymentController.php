@@ -265,29 +265,44 @@ class PaymentController extends Controller
     public function generateInvoice(Payment $payment)
     {
         // Check if invoice already exists
-        $payment->load(['booking.user', 'booking.room.roomType']);
+        $payment->load(['booking.user', 'booking.room.roomType', 'activityBooking.user', 'activityBooking.activity']);
 
         $bookings = $payment->booking;
-        if (!$bookings) {
-            return back()->with('error', 'Invoices can only be generated for bookings.');
+        $activityBooking = $payment->activityBooking;
+
+        if (!$bookings && !$activityBooking) {
+            return back()->with('error', 'Invoices can only be generated for bookings or activity bookings.');
         }
 
         // Logic to generate or retrieve Invoice
-        $invoice = \App\Models\Invoice::where('booking_id', $bookings->id)->first();
+        $invoice = null;
+        if ($bookings) {
+            $invoice = \App\Models\Invoice::where('booking_id', $bookings->id)->first();
+        } elseif ($activityBooking) {
+            $invoice = \App\Models\Invoice::where('activity_booking_id', $activityBooking->id)->first();
+        }
 
         DB::beginTransaction();
         try {
             if (!$invoice) {
                 // Create Invoice Header if not exists
-                $invoice = \App\Models\Invoice::create([
-                    'booking_id' => $bookings->id,
-                    'user_id' => $bookings->user_id,
+                $invoiceData = [
                     'invoice_number' => 'INV-' . strtoupper(uniqid()),
                     'issue_date' => now(),
                     'due_date' => now(),
                     'total_amount' => 0,
                     'status' => $payment->status === 'completed' ? 'paid' : 'unpaid',
-                ]);
+                ];
+
+                if ($bookings) {
+                    $invoiceData['booking_id'] = $bookings->id;
+                    $invoiceData['user_id'] = $bookings->user_id;
+                } elseif ($activityBooking) {
+                    $invoiceData['activity_booking_id'] = $activityBooking->id;
+                    $invoiceData['user_id'] = $activityBooking->user_id;
+                }
+
+                $invoice = \App\Models\Invoice::create($invoiceData);
                 // Force regenerate items even if status is paid, to ensure all latest charges are shown
                 $invoice->items()->delete();
             } else {
@@ -298,57 +313,70 @@ class PaymentController extends Controller
             // Always regenerate items
             $total = 0;
 
-            // 1. Room Charge
-            $nights = \Carbon\Carbon::parse($bookings->check_in_date)->diffInDays(\Carbon\Carbon::parse($bookings->check_out_date));
-            $roomPrice = $bookings->room->roomType->base_price * $nights;
+            if ($bookings) {
+                // 1. Room Charge
+                $nights = \Carbon\Carbon::parse($bookings->check_in_date)->diffInDays(\Carbon\Carbon::parse($bookings->check_out_date));
+                $roomPrice = $bookings->room->roomType->base_price * $nights;
 
-            \App\Models\InvoiceItem::create([
-                'invoice_id' => $invoice->id,
-                'description' => "Room Charge: {$bookings->room->roomType->name} ({$nights} nights)",
-                'quantity' => $nights,
-                'unit_price' => $bookings->room->roomType->base_price,
-                'amount' => $roomPrice,
-                'type' => 'room'
-            ]);
-            $total += $roomPrice;
-
-            // 3. Add Activity Charges
-            // Broaden search dates slightly to handle checkout day activities
-            $activities = \App\Models\ActivityBooking::where('user_id', $bookings->user_id)
-                ->whereBetween('scheduled_time', [
-                    \Carbon\Carbon::parse($bookings->check_in_date)->startOfDay(),
-                    \Carbon\Carbon::parse($bookings->check_out_date)->endOfDay()
-                ])
-                ->whereIn('status', ['confirmed', 'completed', 'paid'])
-                ->get();
-
-            foreach ($activities as $activity) {
                 \App\Models\InvoiceItem::create([
                     'invoice_id' => $invoice->id,
-                    'description' => "Activity: {$activity->activity->name} ({$activity->participants} people) - " . $activity->scheduled_time->format('M d'),
+                    'description' => "Room Charge: {$bookings->room->roomType->name} ({$nights} nights)",
+                    'quantity' => $nights,
+                    'unit_price' => $bookings->room->roomType->base_price,
+                    'amount' => $roomPrice,
+                    'type' => 'room'
+                ]);
+                $total += $roomPrice;
+
+                // 3. Add Activity Charges (linked to this user/booking time)
+                // Broaden search dates slightly to handle checkout day activities
+                $activities = \App\Models\ActivityBooking::where('user_id', $bookings->user_id)
+                    ->whereBetween('scheduled_time', [
+                        \Carbon\Carbon::parse($bookings->check_in_date)->startOfDay(),
+                        \Carbon\Carbon::parse($bookings->check_out_date)->endOfDay()
+                    ])
+                    ->whereIn('status', ['confirmed', 'completed', 'paid'])
+                    ->get();
+
+                foreach ($activities as $activity) {
+                    \App\Models\InvoiceItem::create([
+                        'invoice_id' => $invoice->id,
+                        'description' => "Activity: {$activity->activity->name} ({$activity->participants} people) - " . $activity->scheduled_time->format('M d'),
+                        'quantity' => 1,
+                        'unit_price' => $activity->total_price,
+                        'amount' => $activity->total_price,
+                        'type' => 'activity'
+                    ]);
+                    $total += $activity->total_price;
+                }
+
+                // 4. Add Food Orders
+                $foodOrders = \App\Models\FoodOrder::where('booking_id', $bookings->id)
+                    ->whereIn('status', ['delivered', 'ready', 'paid'])
+                    ->get();
+
+                foreach ($foodOrders as $order) {
+                    \App\Models\InvoiceItem::create([
+                        'invoice_id' => $invoice->id,
+                        'description' => "Food Order #{$order->kot_number}: " . ($order->food ? $order->food->name : 'Item'),
+                        'quantity' => $order->quantity,
+                        'unit_price' => $order->total_price / ($order->quantity ?: 1),
+                        'amount' => $order->total_price,
+                        'type' => 'food'
+                    ]);
+                    $total += $order->total_price;
+                }
+            } elseif ($activityBooking) {
+                // Just the activity charge
+                 \App\Models\InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'description' => "Activity: {$activityBooking->activity->name} ({$activityBooking->participants} people) - " . $activityBooking->scheduled_time->format('M d'),
                     'quantity' => 1,
-                    'unit_price' => $activity->total_price,
-                    'amount' => $activity->total_price,
+                    'unit_price' => $activityBooking->total_price,
+                    'amount' => $activityBooking->total_price,
                     'type' => 'activity'
                 ]);
-                $total += $activity->total_price;
-            }
-
-            // 4. Add Food Orders
-            $foodOrders = \App\Models\FoodOrder::where('booking_id', $bookings->id)
-                ->whereIn('status', ['delivered', 'ready', 'paid'])
-                ->get();
-
-            foreach ($foodOrders as $order) {
-                \App\Models\InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'description' => "Food Order #{$order->kot_number}: " . ($order->food ? $order->food->name : 'Item'),
-                    'quantity' => $order->quantity,
-                    'unit_price' => $order->total_price / ($order->quantity ?: 1),
-                    'amount' => $order->total_price,
-                    'type' => 'food'
-                ]);
-                $total += $order->total_price;
+                $total += $activityBooking->total_price;
             }
 
             // 5. Add Tax (e.g., 10%)

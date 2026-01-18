@@ -30,7 +30,8 @@ class User extends Authenticatable
         'id_number',
         'nationality',
         'gender',
-        'notes'
+        'notes',
+        'loyalty_level_override'
     ];
 
     /**
@@ -88,6 +89,11 @@ class User extends Authenticatable
     }
 
 
+    public function hasRole($roleSlug)
+    {
+        return $this->role && $this->role->slug === $roleSlug;
+    }
+
     public function isAdmin()
     {
         return $this->role && $this->role->slug === 'admin';
@@ -134,6 +140,10 @@ class User extends Authenticatable
 
     public function getLoyaltyStatus()
     {
+        if ($this->loyalty_level_override) {
+            return $this->loyalty_level_override;
+        }
+
         $totalBookings = $this->bookings->count();
         // Sum completed payments
         $totalSpent = Payment::whereHas('booking', function ($query) {

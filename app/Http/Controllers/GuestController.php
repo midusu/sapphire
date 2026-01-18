@@ -12,10 +12,60 @@ use Illuminate\Validation\Rule;
 
 class GuestController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $guests = User::where('role_id', 7) // Assuming role_id 2 is for guests
-            ->with([
+        // Use role slug instead of hardcoded ID
+        $query = User::whereHas('role', function($q) {
+            $q->where('slug', 'guest');
+        });
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('id_number', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('status') && !empty($request->status)) {
+            if ($request->status === 'active') {
+                $query->whereHas('bookings', function ($q) {
+                    $q->whereIn('status', ['confirmed', 'checked_in']);
+                });
+            } elseif ($request->status === 'inactive') {
+                // Debugging logic: ensure this block is hit
+                $query->whereDoesntHave('bookings', function ($q) {
+                    $q->whereIn('status', ['confirmed', 'checked_in']);
+                });
+            }
+        }
+
+        if ($request->has('loyalty_status') && !empty($request->loyalty_status)) {
+            $status = $request->loyalty_status;
+            $query->where(function($q) use ($status) {
+                // Check for manual override first
+                $q->where('loyalty_level_override', $status)
+                  ->orWhere(function($subQ) use ($status) {
+                      // Only apply auto-calculation logic if no override is set
+                      $subQ->whereNull('loyalty_level_override');
+                      
+                      // Add count of bookings to filter
+                      if ($status === 'platinum') {
+                          $subQ->has('bookings', '>=', 20);
+                      } elseif ($status === 'gold') {
+                          $subQ->has('bookings', '>=', 10)->has('bookings', '<', 20);
+                      } elseif ($status === 'silver') {
+                          $subQ->has('bookings', '>=', 5)->has('bookings', '<', 10);
+                      } else { // bronze
+                          $subQ->has('bookings', '<', 5);
+                      }
+                  });
+            });
+        }
+
+        $guests = $query->with([
                 'bookings' => function ($query) {
                     $query->orderBy('check_in_date', 'desc')->limit(5);
                 },
@@ -25,6 +75,10 @@ class GuestController extends Controller
             ])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
+            
+        if (app()->runningUnitTests()) {
+             // dump($guests->pluck('name')->toArray());
+        }
 
         return view('admin.guests.index', compact('guests'));
     }
@@ -123,6 +177,7 @@ class GuestController extends Controller
             'emergency_contact' => 'nullable|string|max:255',
             'emergency_phone' => 'nullable|string|max:20',
             'notes' => 'nullable|string|max:1000',
+            'loyalty_level_override' => 'nullable|in:bronze,silver,gold,platinum',
         ]);
 
         $guest->update($request->except(['password', 'role_id', 'email_verified_at']));
@@ -350,21 +405,6 @@ class GuestController extends Controller
 
     private function calculateLoyaltyStatus(User $guest)
     {
-        $totalBookings = $guest->bookings->count();
-        $totalSpent = \App\Models\Payment::whereHas('booking', function ($query) use ($guest) {
-            $query->where('user_id', $guest->id);
-        })->orWhereHas('activityBooking', function ($query) use ($guest) {
-            $query->where('user_id', $guest->id);
-        })->where('status', 'completed')->sum('amount');
-
-        if ($totalBookings >= 20 || $totalSpent >= 10000) {
-            return 'platinum';
-        } elseif ($totalBookings >= 10 || $totalSpent >= 5000) {
-            return 'gold';
-        } elseif ($totalBookings >= 5 || $totalSpent >= 2000) {
-            return 'silver';
-        } else {
-            return 'bronze';
-        }
+        return $guest->getLoyaltyStatus();
     }
 }

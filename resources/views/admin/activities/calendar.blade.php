@@ -94,20 +94,37 @@
     </div>
 </div>
 
+@php
+    $bookingsJson = $bookings->map(function($booking) {
+        $guestName = 'Guest';
+        if ($booking->user) {
+            $guestName = $booking->user->name;
+        } elseif (!empty($booking->special_requirements)) {
+            $reqs = is_string($booking->special_requirements) 
+                ? json_decode($booking->special_requirements, true) 
+                : $booking->special_requirements;
+                
+            if (is_array($reqs) && isset($reqs['guest_name'])) {
+                $guestName = $reqs['guest_name'];
+            }
+        }
+
+        return [
+            'id' => $booking->id,
+            'activity_name' => $booking->activity ? $booking->activity->name : 'Unknown Activity',
+            'activity_type' => $booking->activity ? $booking->activity->type : 'N/A',
+            'user_name' => $guestName,
+            'scheduled_time' => $booking->scheduled_time->format('Y-m-d H:i:s'),
+            'participants' => $booking->participants,
+            'status' => $booking->status,
+            'total_price' => $booking->total_price
+        ];
+    })->toJson();
+@endphp
+
 <script>
 let currentMonth = '{{ $startDate->format("Y-m") }}';
-let bookings = {!! $bookings->map(function($booking) {
-    return [
-        'id' => $booking->id,
-        'activity_name' => $booking->activity->name,
-        'activity_type' => $booking->activity->type,
-        'user_name' => $booking->user->name,
-        'scheduled_time' => $booking->scheduled_time->format('Y-m-d H:i:s'),
-        'participants' => $booking->participants,
-        'status' => $booking->status,
-        'total_price' => $booking->total_price
-    ];
-})->toJson() !!};
+let bookings = {!! $bookingsJson !!};
 
 function generateCalendar(month) {
     const date = new Date(month + '-01');

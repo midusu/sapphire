@@ -12,11 +12,26 @@ use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $bookings = Booking::with(['user', 'room.roomType'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $query = Booking::with(['user', 'room.roomType']);
+
+        // Filter by Status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by Date Range
+        if ($request->filled('date_from')) {
+            $query->whereDate('check_in_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('check_in_date', '<=', $request->date_to);
+        }
+
+        $bookings = $query->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
             
         return view('admin.bookings.index', compact('bookings'));
     }
@@ -29,49 +44,90 @@ class BookingController extends Controller
 
     public function getAvailableRooms(Request $request)
     {
-        $checkIn = Carbon::parse($request->check_in_date);
-        $checkOut = Carbon::parse($request->check_out_date);
-        $roomTypeId = $request->room_type_id;
+        try {
+            $checkIn = Carbon::parse($request->check_in_date);
+            $checkOut = Carbon::parse($request->check_out_date);
+            $roomTypeId = $request->room_type_id;
 
-        $availableRooms = Room::where('room_type_id', $roomTypeId)
-            ->where('status', 'available')
-            ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
-                $query->where(function ($q) use ($checkIn, $checkOut) {
-                    $q->whereBetween('check_in_date', [$checkIn, $checkOut->copy()->subDay()])
-                      ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut])
-                      ->orWhere(function ($q) use ($checkIn, $checkOut) {
-                          $q->where('check_in_date', '<=', $checkIn)
-                            ->where('check_out_date', '>=', $checkOut);
-                      });
-                });
-            })
-            ->get();
+            $availableRooms = Room::with('roomType')
+                ->where('room_type_id', $roomTypeId)
+                ->where('status', '!=', 'maintenance')
+                ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
+                    $query->whereIn('status', ['confirmed', 'checked_in'])
+                        ->where(function ($q) use ($checkIn, $checkOut) {
+                            $q->whereBetween('check_in_date', [$checkIn, $checkOut->copy()->subDay()])
+                              ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut])
+                              ->orWhere(function ($q) use ($checkIn, $checkOut) {
+                                  $q->where('check_in_date', '<=', $checkIn)
+                                    ->where('check_out_date', '>=', $checkOut);
+                              });
+                        });
+                })
+                ->get();
 
-        return response()->json($availableRooms);
+            return response()->json($availableRooms);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error fetching available rooms: ' . $e->getMessage());
+            return response()->json(['error' => 'Server Error: ' . $e->getMessage()], 500);
+        }
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
+        $rules = [
             'room_id' => 'required|exists:rooms,id',
             'check_in_date' => 'required|date|after_or_equal:today',
             'check_out_date' => 'required|date|after:check_in_date',
             'adults' => 'required|integer|min:1',
             'children' => 'nullable|integer|min:0',
             'special_requests' => 'nullable|string',
-        ]);
+        ];
 
-        $room = Room::findOrFail($request->room_id);
-        $nights = Carbon::parse($request->check_in_date)
-            ->diffInDays(Carbon::parse($request->check_out_date));
-        
-        $totalAmount = $room->roomType->base_price * $nights;
+        if ($request->has('guest_type') && $request->guest_type === 'new') {
+            $rules['new_guest.name'] = 'required|string|max:255';
+            $rules['new_guest.email'] = 'required|email|unique:users,email';
+            $rules['new_guest.phone'] = 'required|string|max:20';
+            $rules['new_guest.address'] = 'nullable|string|max:255';
+        } else {
+            $rules['user_id'] = 'required|exists:users,id';
+        }
+
+        $request->validate($rules);
+
+        $userId = $request->user_id;
 
         DB::beginTransaction();
         try {
+            // Create new user if needed
+            if ($request->guest_type === 'new') {
+                $password = \Illuminate\Support\Str::random(10);
+                $user = \App\Models\User::create([
+                    'name' => $request->new_guest['name'],
+                    'email' => $request->new_guest['email'],
+                    'phone' => $request->new_guest['phone'],
+                    'address' => $request->new_guest['address'] ?? null,
+                    'password' => \Illuminate\Support\Facades\Hash::make($password),
+                ]);
+                
+                // Assign guest role
+                $guestRole = \App\Models\Role::where('slug', 'guest')->first();
+                if ($guestRole) {
+                    $user->roles()->attach($guestRole->id);
+                }
+
+                $userId = $user->id;
+                
+                // Send welcome email with password (todo)
+            }
+
+            $room = Room::findOrFail($request->room_id);
+            $nights = Carbon::parse($request->check_in_date)
+                ->diffInDays(Carbon::parse($request->check_out_date));
+            
+            $totalAmount = $room->roomType->base_price * $nights;
+
             $booking = Booking::create([
-                'user_id' => $request->user_id,
+                'user_id' => $userId,
                 'room_id' => $request->room_id,
                 'check_in_date' => $request->check_in_date,
                 'check_out_date' => $request->check_out_date,
@@ -298,7 +354,7 @@ class BookingController extends Controller
         $totalAmount = $subTotal - $discountAmount;
 
         // Determine user_id (null for guests)
-        $userId = auth()->check() ? auth()->id() : null;
+        $userId = \Illuminate\Support\Facades\Auth::check() ? \Illuminate\Support\Facades\Auth::id() : null;
 
         DB::beginTransaction();
         try {
@@ -342,7 +398,7 @@ class BookingController extends Controller
                 $booking->user->notify(new \App\Notifications\BookingConfirmationNotification($booking));
             }
             
-            $successMessage = auth()->check() 
+            $successMessage = \Illuminate\Support\Facades\Auth::check() 
                 ? 'Booking request submitted successfully! We will confirm your booking shortly.'
                 : 'Booking request submitted successfully! We will contact you at ' . $request->guest_email . ' to confirm your booking.';
             

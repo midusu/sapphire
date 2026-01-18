@@ -75,15 +75,30 @@
                 </div>
             </div>
 
-            <!-- Identification -->
+            <!-- Identification and Loyalty -->
             <div class="bg-white rounded-lg shadow p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Identification</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Identification & Loyalty</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">ID Number</label>
                         <input type="text" name="id_number" class="w-full border rounded-lg px-3 py-2"
                             value="{{ old('id_number', $guest->id_number) }}">
                         @error('id_number')
+                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Loyalty Level Override</label>
+                        <select name="loyalty_level_override" class="w-full border rounded-lg px-3 py-2">
+                            <option value="">Auto-Calculate (Default)</option>
+                            <option value="bronze" {{ old('loyalty_level_override', $guest->loyalty_level_override) == 'bronze' ? 'selected' : '' }}>Bronze</option>
+                            <option value="silver" {{ old('loyalty_level_override', $guest->loyalty_level_override) == 'silver' ? 'selected' : '' }}>Silver</option>
+                            <option value="gold" {{ old('loyalty_level_override', $guest->loyalty_level_override) == 'gold' ? 'selected' : '' }}>Gold</option>
+                            <option value="platinum" {{ old('loyalty_level_override', $guest->loyalty_level_override) == 'platinum' ? 'selected' : '' }}>Platinum</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Select a level to manually override the calculated status.</p>
+                        @error('loyalty_level_override')
                             <span class="text-red-500 text-sm">{{ $message }}</span>
                         @enderror
                     </div>

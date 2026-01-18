@@ -13,7 +13,7 @@ class Activity extends Model
         'name',
         'description',
         'type',
-        'duration_minutes',
+        'duration',
         'price',
         'max_participants',
         'location',
@@ -23,7 +23,6 @@ class Activity extends Model
     ];
 
     protected $casts = [
-        'duration_minutes' => 'integer',
         'price' => 'decimal:2',
         'max_participants' => 'integer',
         'is_active' => 'boolean'

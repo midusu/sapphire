@@ -57,7 +57,7 @@
                 <div class="space-y-3">
                     <div class="flex justify-between border-b pb-2">
                         <span class="text-gray-600">Item</span>
-                        <span class="font-medium text-gray-900">{{ $foodOrder->food->name }}</span>
+                        <span class="font-medium text-gray-900">{{ $foodOrder->food->name ?? 'Item Unavailable' }}</span>
                     </div>
                     <div class="flex justify-between border-b pb-2">
                         <span class="text-gray-600">Quantity</span>

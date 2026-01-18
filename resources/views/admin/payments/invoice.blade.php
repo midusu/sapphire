@@ -250,13 +250,49 @@
             <div>
                 <div class="section-title">Bill To</div>
                 <div class="billing-info">
-                    <p><strong>{{ $payment->booking?->user->name ?? $payment->activityBooking?->user->name }}</strong></p>
-                    <p>{{ $payment->booking?->user->email ?? $payment->activityBooking?->user->email }}</p>
-                    @if($payment->booking?->user->phone || $payment->activityBooking?->user->phone)
-                        <p>{{ $payment->booking?->user->phone ?? $payment->activityBooking?->user->phone }}</p>
+                    @php
+                        $guestName = 'Guest';
+                        $guestEmail = 'N/A';
+                        $guestPhone = 'N/A';
+                        $guestAddress = 'N/A';
+
+                        if ($payment->booking) {
+                            if ($payment->booking->user) {
+                                $guestName = $payment->booking->user->name;
+                                $guestEmail = $payment->booking->user->email;
+                                $guestPhone = $payment->booking->user->phone;
+                                $guestAddress = $payment->booking->user->address;
+                            } else {
+                                $guestName = $payment->booking->guest_name ?? 'Guest';
+                                $guestEmail = $payment->booking->guest_email ?? 'N/A';
+                                $guestPhone = $payment->booking->guest_phone ?? 'N/A';
+                            }
+                        } elseif ($payment->activityBooking) {
+                            if ($payment->activityBooking->user) {
+                                $guestName = $payment->activityBooking->user->name;
+                                $guestEmail = $payment->activityBooking->user->email;
+                                $guestPhone = $payment->activityBooking->user->phone;
+                                $guestAddress = $payment->activityBooking->user->address;
+                            } elseif (!empty($payment->activityBooking->special_requirements)) {
+                                $reqs = is_string($payment->activityBooking->special_requirements) 
+                                    ? json_decode($payment->activityBooking->special_requirements, true) 
+                                    : $payment->activityBooking->special_requirements;
+                                    
+                                if (is_array($reqs)) {
+                                    $guestName = $reqs['guest_name'] ?? 'Guest';
+                                    $guestEmail = $reqs['guest_email'] ?? 'N/A';
+                                    $guestPhone = $reqs['guest_phone'] ?? 'N/A';
+                                }
+                            }
+                        }
+                    @endphp
+                    <p><strong>{{ $guestName }}</strong></p>
+                    <p>{{ $guestEmail }}</p>
+                    @if($guestPhone && $guestPhone !== 'N/A')
+                        <p>{{ $guestPhone }}</p>
                     @endif
-                    @if($payment->booking?->user->address || $payment->activityBooking?->user->address)
-                        <p>{{ $payment->booking?->user->address ?? $payment->activityBooking?->user->address }}</p>
+                    @if($guestAddress && $guestAddress !== 'N/A')
+                        <p>{{ $guestAddress }}</p>
                     @endif
                 </div>
             </div>

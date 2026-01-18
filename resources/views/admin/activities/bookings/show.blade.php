@@ -49,21 +49,41 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Guest Information</h3>
             <div class="space-y-3">
-                <div>
-                    <span class="text-sm text-gray-500">Name</span>
-                    <p class="font-medium">{{ $activityBooking->user->name }}</p>
-                </div>
-                <div>
-                    <span class="text-sm text-gray-500">Email</span>
-                    <p class="font-medium">{{ $activityBooking->user->email }}</p>
-                </div>
-                @if($activityBooking->user->phone)
+                @if($activityBooking->user)
                     <div>
-                        <span class="text-sm text-gray-500">Phone</span>
-                        <p class="font-medium">{{ $activityBooking->user->phone }}</p>
+                        <span class="text-sm text-gray-500">Name</span>
+                        <p class="font-medium">{{ $activityBooking->user->name }}</p>
                     </div>
+                    <div>
+                        <span class="text-sm text-gray-500">Email</span>
+                        <p class="font-medium">{{ $activityBooking->user->email }}</p>
+                    </div>
+                    @if($activityBooking->user->phone)
+                        <div>
+                            <span class="text-sm text-gray-500">Phone</span>
+                            <p class="font-medium">{{ $activityBooking->user->phone }}</p>
+                        </div>
+                    @endif
+                @else
+                    @php
+                        $guestInfo = json_decode($activityBooking->special_requirements, true);
+                    @endphp
+                    <div>
+                        <span class="text-sm text-gray-500">Guest Name</span>
+                        <p class="font-medium">{{ $guestInfo['guest_name'] ?? 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500">Guest Email</span>
+                        <p class="font-medium">{{ $guestInfo['guest_email'] ?? 'N/A' }}</p>
+                    </div>
+                    @if(isset($guestInfo['guest_phone']))
+                        <div>
+                            <span class="text-sm text-gray-500">Guest Phone</span>
+                            <p class="font-medium">{{ $guestInfo['guest_phone'] }}</p>
+                        </div>
+                    @endif
                 @endif
-                @if($activityBooking->booking)
+                @if($activityBooking->booking && $activityBooking->booking->room)
                     <div>
                         <span class="text-sm text-gray-500">Room Booking</span>
                         <p class="font-medium">Room {{ $activityBooking->booking->room->room_number }}</p>

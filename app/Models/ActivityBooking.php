@@ -12,6 +12,7 @@ class ActivityBooking extends Model
     protected $fillable = [
         'user_id',
         'activity_id',
+        'booking_id',
         'scheduled_time',
         'participants',
         'total_price',
@@ -34,6 +35,11 @@ class ActivityBooking extends Model
     public function activity()
     {
         return $this->belongsTo(Activity::class);
+    }
+
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class);
     }
 
     public function payments()

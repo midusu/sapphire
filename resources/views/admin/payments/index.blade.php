@@ -129,16 +129,44 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($payments as $payment)
+                    @php
+                        $guestName = 'Guest';
+                        $guestEmail = 'N/A';
+                        
+                        if ($payment->booking) {
+                            if ($payment->booking->user) {
+                                $guestName = $payment->booking->user->name;
+                                $guestEmail = $payment->booking->user->email;
+                            } else {
+                                $guestName = $payment->booking->guest_name ?? 'Guest';
+                                $guestEmail = $payment->booking->guest_email ?? 'N/A';
+                            }
+                        } elseif ($payment->activityBooking) {
+                            if ($payment->activityBooking->user) {
+                                $guestName = $payment->activityBooking->user->name;
+                                $guestEmail = $payment->activityBooking->user->email;
+                            } elseif (!empty($payment->activityBooking->special_requirements)) {
+                                $reqs = is_string($payment->activityBooking->special_requirements) 
+                                    ? json_decode($payment->activityBooking->special_requirements, true) 
+                                    : $payment->activityBooking->special_requirements;
+                                    
+                                if (is_array($reqs)) {
+                                    $guestName = $reqs['guest_name'] ?? 'Guest';
+                                    $guestEmail = $reqs['guest_email'] ?? 'N/A';
+                                }
+                            }
+                        }
+                    @endphp
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             #{{ str_pad($payment->id, 5, '0', STR_PAD_LEFT) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-gray-900">
-                                {{ $payment->booking?->user->name ?? $payment->activityBooking?->user->name }}
+                                {{ $guestName }}
                             </div>
                             <div class="text-sm text-gray-500">
-                                {{ $payment->booking?->user->email ?? $payment->activityBooking?->user->email }}
+                                {{ $guestEmail }}
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">

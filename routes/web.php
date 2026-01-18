@@ -236,9 +236,12 @@ Route::prefix('admin')->middleware(['auth', 'verified', 'admin'])->name('admin.'
     Route::resource('feedback', \App\Http\Controllers\Admin\FeedbackController::class)->only(['index', 'show', 'update', 'destroy']);
 });
 
-// Default dashboard route
+// Default dashboard route - Redirect based on role
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    if (auth()->user()->hasRole('admin') || auth()->user()->hasRole('super-admin')) {
+        return redirect()->route('admin.dashboard');
+    }
+    return redirect()->route('guest.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

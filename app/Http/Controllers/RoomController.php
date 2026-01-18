@@ -10,10 +10,24 @@ use Carbon\Carbon;
 
 class RoomController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $rooms = Room::with(['roomType', 'currentBooking'])
-            ->orderBy('floor')
+        $query = Room::with(['roomType', 'currentBooking']);
+
+        // Apply filters
+        if ($request->has('status') && !empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('room_type') && !empty($request->room_type)) {
+            $query->where('room_type_id', $request->room_type);
+        }
+
+        if ($request->has('floor') && !empty($request->floor)) {
+            $query->where('floor', $request->floor);
+        }
+
+        $rooms = $query->orderBy('floor')
             ->orderBy('room_number')
             ->paginate(20);
             
@@ -111,12 +125,12 @@ class RoomController extends Controller
         }
         
         // Log the status change (using Laravel's built-in logging)
-        \Log::info('Room status changed', [
+        \Illuminate\Support\Facades\Log::info('Room status changed', [
             'room_id' => $room->id,
             'room_number' => $room->room_number,
             'old_status' => $oldStatus,
             'new_status' => $request->status,
-            'user_id' => auth()->id()
+            'user_id' => \Illuminate\Support\Facades\Auth::id()
         ]);
 
         return back()->with('success', 'Room status updated successfully!');
@@ -222,7 +236,9 @@ class RoomController extends Controller
             'occupancy_rate' => Room::count() > 0 ? (Room::where('status', 'occupied')->count() / Room::count() * 100) : 0,
             'by_type' => Room::with('roomType')
                 ->get()
-                ->groupBy('roomType.name')
+                ->groupBy(function($room) {
+                    return $room->roomType->name ?? 'Unknown';
+                })
                 ->map(function($rooms) {
                     return [
                         'total' => $rooms->count(),

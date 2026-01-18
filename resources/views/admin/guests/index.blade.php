@@ -306,20 +306,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @php
-                                                $totalBookings = $guest->bookings->count();
-                                                $totalSpent = \App\Models\Payment::whereHas('booking', function ($query) use ($guest) {
-                                                    $query->where('user_id', $guest->id);
-                                                })->orWhereHas('activityBooking', function ($query) use ($guest) {
-                                                    $query->where('user_id', $guest->id);
-                                                })->where('status', 'completed')->sum('amount');
-                                                $loyaltyStatus = 'bronze';
-                                                if ($totalBookings >= 20 || $totalSpent >= 10000) {
-                                                    $loyaltyStatus = 'platinum';
-                                                } elseif ($totalBookings >= 10 || $totalSpent >= 5000) {
-                                                    $loyaltyStatus = 'gold';
-                                                } elseif ($totalBookings >= 5 || $totalSpent >= 2000) {
-                                                    $loyaltyStatus = 'silver';
-                                                }
+                                                $loyaltyStatus = $guest->getLoyaltyStatus();
                                             @endphp
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                                     @if($loyaltyStatus == 'bronze') bg-orange-100 text-orange-800

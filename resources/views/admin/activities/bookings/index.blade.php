@@ -67,14 +67,32 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($activityBookings as $booking)
+                    @php
+                        $guestName = 'Guest';
+                        $guestEmail = 'N/A';
+                        
+                        if ($booking->user) {
+                            $guestName = $booking->user->name;
+                            $guestEmail = $booking->user->email;
+                        } elseif (!empty($booking->special_requirements)) {
+                            $reqs = is_string($booking->special_requirements) 
+                                ? json_decode($booking->special_requirements, true) 
+                                : $booking->special_requirements;
+                                
+                            if (is_array($reqs)) {
+                                $guestName = $reqs['guest_name'] ?? 'Guest';
+                                $guestEmail = $reqs['guest_email'] ?? 'N/A';
+                            }
+                        }
+                    @endphp
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             #{{ str_pad($booking->id, 5, '0', STR_PAD_LEFT) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ $booking->user->name }}</div>
-                            <div class="text-sm text-gray-500">{{ $booking->user->email }}</div>
-                            @if($booking->booking)
+                            <div class="text-sm font-medium text-gray-900">{{ $guestName }}</div>
+                            <div class="text-sm text-gray-500">{{ $guestEmail }}</div>
+                            @if($booking->booking && $booking->booking->room)
                                 <div class="text-xs text-blue-600">Room: {{ $booking->booking->room->room_number }}</div>
                             @endif
                         </td>

@@ -92,13 +92,13 @@
                 <div class="space-y-3">
                     <div>
                         <span class="text-sm text-gray-500">Guest Name</span>
-                        <p class="font-medium">{{ $room->currentBooking->user->name }}</p>
+                        <p class="font-medium">{{ $room->currentBooking->user->name ?? 'Unknown Guest' }}</p>
                     </div>
                     <div>
                         <span class="text-sm text-gray-500">Email</span>
-                        <p class="font-medium">{{ $room->currentBooking->user->email }}</p>
+                        <p class="font-medium">{{ $room->currentBooking->user->email ?? 'N/A' }}</p>
                     </div>
-                    @if($room->currentBooking->user->phone)
+                    @if(optional($room->currentBooking->user)->phone)
                         <div>
                             <span class="text-sm text-gray-500">Phone</span>
                             <p class="font-medium">{{ $room->currentBooking->user->phone }}</p>
@@ -181,7 +181,7 @@
                                 #{{ str_pad($booking->id, 5, '0', STR_PAD_LEFT) }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $booking->user->name }}
+                                {{ $booking->user->name ?? 'Unknown Guest' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ $booking->check_in_date->format('M d, Y') }}

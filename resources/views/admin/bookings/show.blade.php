@@ -91,31 +91,35 @@
             <div class="space-y-3">
                 <div>
                     <span class="text-sm text-gray-500">Room Number</span>
-                    <p class="font-medium">{{ $booking->room->room_number }}</p>
+                    <p class="font-medium">{{ $booking->room->room_number ?? 'N/A' }}</p>
                 </div>
                 <div>
                     <span class="text-sm text-gray-500">Room Type</span>
-                    <p class="font-medium">{{ $booking->room->roomType->name }}</p>
+                    <p class="font-medium">{{ $booking->room->roomType->name ?? 'N/A' }}</p>
                 </div>
                 <div>
                     <span class="text-sm text-gray-500">Floor</span>
-                    <p class="font-medium">Floor {{ $booking->room->floor }}</p>
+                    <p class="font-medium">Floor {{ $booking->room->floor ?? 'N/A' }}</p>
                 </div>
                 <div>
                     <span class="text-sm text-gray-500">Rate per Night</span>
-                    <p class="font-medium">${{ number_format($booking->room->roomType->base_price, 2) }}</p>
+                    <p class="font-medium">${{ number_format($booking->room->roomType->base_price ?? 0, 2) }}</p>
                 </div>
                 <div>
                     <span class="text-sm text-gray-500">Room Status</span>
                     <p class="font-medium">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            @if($booking->room->status == 'available') bg-green-100 text-green-800
-                            @elseif($booking->room->status == 'occupied') bg-red-100 text-red-800
-                            @elseif($booking->room->status == 'cleaning') bg-yellow-100 text-yellow-800
-                            @else bg-gray-100 text-gray-800
-                            @endif">
-                            {{ ucfirst($booking->room->status) }}
-                        </span>
+                        @if($booking->room)
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                @if($booking->room->status == 'available') bg-green-100 text-green-800
+                                @elseif($booking->room->status == 'occupied') bg-red-100 text-red-800
+                                @elseif($booking->room->status == 'cleaning') bg-yellow-100 text-yellow-800
+                                @else bg-gray-100 text-gray-800
+                                @endif">
+                                {{ ucfirst($booking->room->status) }}
+                            </span>
+                        @else
+                            <span class="text-gray-500">N/A</span>
+                        @endif
                     </p>
                 </div>
             </div>
@@ -163,8 +167,8 @@
                 <h4 class="font-medium text-gray-700 mb-3">Charges</h4>
                 <div class="space-y-2">
                     <div class="flex justify-between">
-                        <span>Room Rate ({{ $booking->check_in_date->diffInDays($booking->check_out_date) }} nights × ${{ number_format($booking->room->roomType->base_price, 2) }})</span>
-                        <span>${{ number_format($booking->room->roomType->base_price * $booking->check_in_date->diffInDays($booking->check_out_date), 2) }}</span>
+                        <span>Room Rate ({{ $booking->check_in_date->diffInDays($booking->check_out_date) }} nights × ${{ number_format($booking->room->roomType->base_price ?? 0, 2) }})</span>
+                        <span>${{ number_format(($booking->room->roomType->base_price ?? 0) * $booking->check_in_date->diffInDays($booking->check_out_date), 2) }}</span>
                     </div>
                     @if($booking->special_requests)
                         <div class="flex justify-between text-gray-500">
@@ -201,6 +205,17 @@
                         @if($payment->transaction_id)
                             <div class="text-sm text-gray-600">
                                 Transaction ID: {{ $payment->transaction_id }}
+                            </div>
+                        @endif
+                        
+                        @if($payment->status == 'pending')
+                            <div class="mt-2 flex space-x-2">
+                                <form method="POST" action="{{ route('admin.payments.complete', $payment) }}" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition">
+                                        Mark as Paid
+                                    </button>
+                                </form>
                             </div>
                         @endif
                     </div>

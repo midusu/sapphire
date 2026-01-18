@@ -46,13 +46,14 @@
                 @if(in_array($payment->status, ['pending', 'failed']))
                     <form method="POST" action="{{ route('admin.payments.destroy', $payment) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this payment?')">
                         @csrf
+                        @method('DELETE')
                         <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
                             <i class="fas fa-trash mr-2"></i>Delete
                         </button>
                     </form>
                 @endif
                 
-                <a href="{{ route('admin.payments.invoice', $payment) }}" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition" target="_blank">
+                <a href="{{ route('admin.payments.generate-invoice', $payment) }}" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition" target="_blank">
                     <i class="fas fa-file-invoice mr-2"></i>Invoice
                 </a>
                 
@@ -67,19 +68,52 @@
         <!-- Guest Information -->
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Guest Information</h3>
+            @php
+                $guestName = 'Guest';
+                $guestEmail = 'N/A';
+                $guestPhone = 'N/A';
+                
+                if ($payment->booking) {
+                    if ($payment->booking->user) {
+                        $guestName = $payment->booking->user->name;
+                        $guestEmail = $payment->booking->user->email;
+                        $guestPhone = $payment->booking->user->phone;
+                    } else {
+                        $guestName = $payment->booking->guest_name ?? 'Guest';
+                        $guestEmail = $payment->booking->guest_email ?? 'N/A';
+                        $guestPhone = $payment->booking->guest_phone ?? 'N/A';
+                    }
+                } elseif ($payment->activityBooking) {
+                    if ($payment->activityBooking->user) {
+                        $guestName = $payment->activityBooking->user->name;
+                        $guestEmail = $payment->activityBooking->user->email;
+                        $guestPhone = $payment->activityBooking->user->phone;
+                    } elseif (!empty($payment->activityBooking->special_requirements)) {
+                        $reqs = is_string($payment->activityBooking->special_requirements) 
+                            ? json_decode($payment->activityBooking->special_requirements, true) 
+                            : $payment->activityBooking->special_requirements;
+                            
+                        if (is_array($reqs)) {
+                            $guestName = $reqs['guest_name'] ?? 'Guest';
+                            $guestEmail = $reqs['guest_email'] ?? 'N/A';
+                            $guestPhone = $reqs['guest_phone'] ?? 'N/A';
+                        }
+                    }
+                }
+            @endphp
             <div class="space-y-3">
                 <div>
                     <span class="text-sm text-gray-500">Name</span>
-                    <p class="font-medium">{{ $payment->booking?->user->name ?? $payment->activityBooking?->user->name }}</p>
+                    <p class="font-medium">{{ $guestName }}</p>
                 </div>
                 <div>
                     <span class="text-sm text-gray-500">Email</span>
-                    <p class="font-medium">{{ $payment->booking?->user->email ?? $payment->activityBooking?->user->email }}</p>
+                    <p class="font-medium">{{ $guestEmail }}</p>
                 </div>
-                @if($payment->booking?->user->phone || $payment->activityBooking?->user->phone)
+                @if($guestPhone && $guestPhone !== 'N/A')
                     <div>
                         <span class="text-sm text-gray-500">Phone</span>
-                        <p class="font-medium">{{ $payment->booking?->user->phone ?? $payment->activityBooking?->user->phone }}</p>
+                        <p class="font-medium">{{ $guestPhone }}</p>
                     </div>
                 @endif
             </div>

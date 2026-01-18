@@ -10,7 +10,7 @@
             <p class="text-gray-600">Track and manage all food orders</p>
         </div>
         <div class="flex space-x-2">
-            <a href="{{ route('kitchen.dashboard') }}"
+            <a href="{{ route('admin.kitchen.dashboard') }}"
                 class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition" target="_blank">
                 <i class="fas fa-utensils mr-2"></i>Kitchen Display
             </a>
@@ -52,7 +52,7 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $order->food->name }} <span class="text-gray-400">x{{ $order->quantity }}</span>
+                                {{ $order->food->name ?? 'Item Unavailable' }} <span class="text-gray-400">x{{ $order->quantity }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ $order->getOrderTypeLabel() }}
